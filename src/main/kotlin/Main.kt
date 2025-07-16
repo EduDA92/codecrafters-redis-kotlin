@@ -1,31 +1,33 @@
 import java.net.ServerSocket
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
-fun main(args: Array<String>) = runBlocking {
-
+suspend fun main(args: Array<String>) {
      var serverSocket = ServerSocket(6379)
 
+     // Since the tester restarts your program quite often, setting SO_REUSEADDR
+     // ensures that we don't run into 'Address already in use' errors
      serverSocket.reuseAddress = true
 
-     while(true){
+     coroutineScope {
 
-          val socket = serverSocket.accept() // Wait for connection from client.
+          while(true){
 
-          launch{
+               println("Waiting for new connection")
+               val socket = serverSocket.accept() // Wait for connection from client.
+               println("accepted new connection")
 
-               while (true){
 
-                    val input = socket.inputStream.bufferedReader().readLine()
-                    if (input == ""){
-                         break
+
+               launch{
+                    while(true){
+                         val buffer = socket.inputStream.bufferedReader().readLine()
+                         socket.outputStream.write("+PONG\r\n".toByteArray())
+                         println("Pong sent")
                     }
-                    socket.outputStream.write("+PONG\r\n".toByteArray())
-                    println("Pong sent")
-
                }
+
+
           }
      }
-
-
 }
